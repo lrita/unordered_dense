@@ -481,6 +481,13 @@ template <typename From, typename To1, typename To2>
 constexpr bool is_neither_convertible_v = !std::is_convertible_v<From, To1> && !std::is_convertible_v<From, To2>;
 
 template <typename T>
+struct remove_cvref {
+    using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+template <typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
+
+template <typename T>
 constexpr bool has_reserve = is_detected_v<detect_reserve, T>;
 
 // base type for map has mapped_type
@@ -1595,7 +1602,8 @@ public:
         typename Q = T,
         typename H = Hash,
         typename KE = KeyEqual,
-        std::enable_if_t<is_map_v<Q> && is_transparent_v<H, KE> && is_neither_convertible_v<K&&, iterator, const_iterator>,
+        std::enable_if_t<is_map_v<Q> && is_transparent_v<H, KE> && is_neither_convertible_v<K&&, iterator, const_iterator> &&
+                             !std::is_same_v<remove_cvref_t<K>, Key>,
                          bool> = true>
     auto try_emplace(K&& key, Args&&... args) -> std::pair<iterator, bool> {
         return do_try_emplace(std::forward<K>(key), std::forward<Args>(args)...);
@@ -1607,7 +1615,8 @@ public:
         typename Q = T,
         typename H = Hash,
         typename KE = KeyEqual,
-        std::enable_if_t<is_map_v<Q> && is_transparent_v<H, KE> && is_neither_convertible_v<K&&, iterator, const_iterator>,
+        std::enable_if_t<is_map_v<Q> && is_transparent_v<H, KE> && is_neither_convertible_v<K&&, iterator, const_iterator> &&
+                             !std::is_same_v<remove_cvref_t<K>, Key>,
                          bool> = true>
     auto try_emplace(const_iterator /*hint*/, K&& key, Args&&... args) -> iterator {
         return do_try_emplace(std::forward<K>(key), std::forward<Args>(args)...).first;
